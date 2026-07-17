@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAP Segregation of Duties (SoD) Reference — Authorization Objects, T-Codes &amp; Conflict Patterns</title>
+<meta name="description" content="A working reference glossary of SAP authorization objects, transaction codes, and common Segregation of Duties (SoD) conflict patterns across FI/CO, MM, SD, and HR. Covers ECC and S/4HANA.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12161A;
+    --surface: #1A2027;
+    --surface-alt: #212934;
+    --border: #2B333C;
+    --text-primary: #E7EAED;
+    --text-secondary: #8C97A3;
+    --text-tertiary: #5C6670;
+    --accent-teal: #4FA8A3;
+    --accent-teal-dim: #2F5F5C;
+    --accent-amber: #D9A441;
+    --risk-high: #D9614F;
+    --risk-med: #D9A441;
+    --risk-low: #6FA97A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  a { color: var(--accent-teal); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent-teal);
+    outline-offset: 2px;
+  }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* ---------- Layout ---------- */
+  .shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidenav { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  /* ---------- Sidenav ---------- */
+  .sidenav {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 32px 20px;
+    border-right: 1px solid var(--border);
+  }
+
+  .sidenav .brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
+    margin-bottom: 28px;
+    display: block;
+  }
+
+  .sidenav .brand span { color: var(--accent-teal); }
+
+  .sidenav nav ul { list-style: none; }
+  .sidenav nav li { margin-bottom: 4px; }
+  .sidenav nav a {
+    display: block;
+    padding: 7px 10px;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+  .sidenav nav a:hover { background: var(--surface); color: var(--text-primary); text-decoration: none; }
+
+  .sidenav .module-tag {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: var(--surface-alt);
+    color: var(--accent-teal);
+    margin-right: 6px;
+  }
+
+  /* ---------- Main ---------- */
+  main { padding: 48px 40px 96px; min-width: 0; }
+  @media (max-width: 600px) { main { padding: 32px 20px 64px; } }
+
+  .hero {
+    max-width: 640px;
+    margin-bottom: 56px;
+  }
+
+  .hero .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent-teal);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 34px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+  }
+
+  .hero p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    max-width: 560px;
+  }
+
+  .search-box {
+    margin-top: 28px;
+    position: relative;
+  }
+
+  .search-box input {
+    width: 100%;
+    max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 11px 14px;
+    color: var(--text-primary);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+  }
+  .search-box input::placeholder { color: var(--text-tertiary); }
+  .search-box input:focus { border-color: var(--accent-teal); outline: none; }
+
+  /* ---------- Module sections ---------- */
+  .module {
+    margin-bottom: 72px;
+    scroll-margin-top: 24px;
+  }
+
+  .module-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 8px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .module-header .module-code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--bg);
+    background: var(--accent-teal);
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .module-header h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 21px;
+    font-weight: 600;
+  }
+
+  .module-desc {
+    color: var(--text-secondary);
+    font-size: 14px;
+    max-width: 620px;
+    margin: 14px 0 32px;
+  }
+
+  .subhead {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 14px;
+  }
+
+  /* ---------- Glossary table ---------- */
+  .glossary-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+  .glossary-table tr { border-bottom: 1px solid var(--border); }
+  .glossary-table tr:last-child { border-bottom: none; }
+  .glossary-table td { padding: 12px 10px; vertical-align: top; font-size: 13.5px; }
+  .glossary-table td:first-child { width: 190px; padding-left: 0; }
+  .glossary-table td:last-child { color: var(--text-secondary); width: 160px; padding-right: 0; }
+
+  .obj-code {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--accent-amber);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .obj-desc { color: var(--text-primary); }
+  .obj-context { font-size: 12.5px; }
+
+  /* ---------- Conflict chips (signature element) ---------- */
+  .conflict-grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  .conflict-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  .conflict-fn {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .conflict-fn .fn-name { color: var(--text-primary); font-weight: 500; }
+  .conflict-fn .fn-tcode { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-tertiary); }
+
+  .conflict-mark {
+    color: var(--risk-high);
+    font-size: 15px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .risk-badge {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .risk-high { background: rgba(217,97,79,0.15); color: var(--risk-high); }
+  .risk-med { background: rgba(217,164,65,0.15); color: var(--risk-med); }
+  .risk-low { background: rgba(111,169,122,0.15); color: var(--risk-low); }
+
+  /* ---------- CTA ---------- */
+  .module-cta {
+    margin-top: 28px;
+    padding: 20px 22px;
+    background: var(--surface-alt);
+    border: 1px solid var(--accent-teal-dim);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  .module-cta p { font-size: 13.5px; color: var(--text-secondary); max-width: 420px; }
+  .module-cta p strong { color: var(--text-primary); }
+
+  .cta-button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--bg);
+    background: var(--accent-teal);
+    padding: 10px 16px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .cta-button:hover { text-decoration: none; opacity: 0.9; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    max-width: 640px;
+    padding-top: 32px;
+    margin-top: 32px;
+    border-top: 1px solid var(--border);
+    color: var(--text-tertiary);
+    font-size: 12.5px;
+  }
+  footer a { color: var(--text-secondary); }
+  footer p { margin-bottom: 8px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidenav">
+    <a href="#top" class="brand">SAP SoD<span>.reference</span></a>
+    <nav>
+      <ul>
+        <li><a href="#fico"><span class="module-tag">01</span>FI/CO</a></li>
+        <li><a href="#mm"><span class="module-tag">02</span>MM</a></li>
+        <li><a href="#sd"><span class="module-tag">03</span>SD</a></li>
+        <li><a href="#hr"><span class="module-tag">04</span>HR/HCM</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <main id="top">
+    <div class="hero">
+      <div class="eyebrow">SAP Authorization &amp; SoD Reference</div>
+      <h1>Segregation of Duties, decoded field by field.</h1>
+      <p>A working glossary of SAP authorization objects, transaction codes, and the function pairs that commonly create Segregation of Duties conflicts — across FI/CO, MM, SD, and HR. Covers SAP ECC and S/4HANA.</p>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search a T-code, auth object, or function (e.g. F_LFA1_BUK, MIRO)" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- ===================== FI/CO ===================== -->
+    <section class="module" id="fico">
+      <div class="module-header">
+        <span class="module-code">FI/CO</span>
+        <h2>Finance &amp; Controlling</h2>
+      </div>
+      <p class="module-desc">Covers Accounts Payable, Accounts Receivable, General Ledger, Asset Accounting, Bank Accounting, and Controlling.</p>
+
+      <div class="subhead">Authorization Objects</div>
+      <table class="glossary-table" data-searchable>
+        <tbody>
+          <tr><td><span class="obj-code">F_LFA1_APP</span></td><td class="obj-desc">Vendor master: application area authorization — controls which vendor account groups/fields a user may create or change.</td><td class="obj-context">Vendor master maintenance</td></tr>
+          <tr><td><span class="obj-code">F_LFA1_BUK</span></td><td class="obj-desc">Vendor master: company code authorization — controls which company codes a user may maintain vendor data for.</td><td class="obj-context">Vendor master maintenance</td></tr>
+          <tr><td><span class="obj-code">F_KNA1_APP</span></td><td class="obj-desc">Customer master: application area authorization.</td><td class="obj-context">Customer master maintenance</td></tr>
+          <tr><td><span class="obj-code">F_KNA1_BUK</span></td><td class="obj-desc">Customer master: company code authorization.</td><td class="obj-context">Customer master maintenance</td></tr>
+          <tr><td><span class="obj-code">F_BKPF_BUK</span></td><td class="obj-desc">FI document: company code authorization — controls posting/display of accounting documents per company code.</td><td class="obj-context">Journal/document posting across FI</td></tr>
+          <tr><td><span class="obj-code">F_BKPF_BES</span></td><td class="obj-desc">FI document: posting key authorization — controls which posting keys (debit/credit types) a user may use.</td><td class="obj-context">Journal posting</td></tr>
+          <tr><td><span class="obj-code">F_REGU_BUK</span></td><td class="obj-desc">Payment program: company code authorization — controls execution of automatic payment runs (F110).</td><td class="obj-context">Payment processing</td></tr>
+          <tr><td><span class="obj-code">M_RECH_BUK</span></td><td class="obj-desc">Logistics invoice verification: company code authorization for invoice release/blocking.</td><td class="obj-context">AP invoice release (MRBR)</td></tr>
+          <tr><td><span class="obj-code">F_SKA1_BUK</span></td><td class="obj-desc">GL account master: company code authorization for creating/changing GL accounts.</td><td class="obj-context">GL master maintenance</td></tr>
+          <tr><td><span class="obj-code">A_S_TCODE</span></td><td class="obj-desc">Asset accounting: transaction-code-level authorization for asset postings.</td><td class="obj-context">Asset acquisition/retirement</td></tr>
+          <tr><td><span class="obj-code">S_TABU_NAM</span></td><td class="obj-desc">Table maintenance authorization — controls access to configuration tables (tax codes, tolerance groups, exchange rates, etc.).</td><td class="obj-context">Configuration/master data changes</td></tr>
+          <tr><td><span class="obj-code">K_CSKS</span></td><td class="obj-desc">Cost center: authorization for cost center master data maintenance.</td><td class="obj-context">Cost center maintenance</td></tr>
+          <tr><td><span class="obj-code">K_ORDER</span></td><td class="obj-desc">Internal order: authorization for order master data and settlement.</td><td class="obj-context">Internal order creation/settlement</td></tr>
+          <tr><td><span class="obj-code">K_PCA</span></td><td class="obj-desc">Profit center accounting: authorization for profit center master and postings.</td><td class="obj-context">Profit center maintenance</td></tr>
+        </tbody>
+      </table>
+
+      <div class="subhead">Common Conflict Patterns</div>
+      <div class="conflict-grid" data-searchable-container>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Create/Maintain Vendor Master</span><span class="fn-tcode">FK01, FK02, XK01, XK02</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Post Vendor Invoice</span><span class="fn-tcode">FB60, MIRO</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Maintain Vendor Bank Details</span><span class="fn-tcode">FK02, XK02</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Process Payment Run</span><span class="fn-tcode">F110</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Post Vendor Invoice</span><span class="fn-tcode">FB60, MIRO</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Process Outgoing Payment</span><span class="fn-tcode">F110, F-53</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Create/Maintain GL Account</span><span class="fn-tcode">FS00, FSP0</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Post GL Journal Entry</span><span class="fn-tcode">FB01, F-02</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Open/Close Posting Periods</span><span class="fn-tcode">OB52</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Post Journal Entries</span><span class="fn-tcode">FB01, F-02</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Park Document</span><span class="fn-tcode">FV50, F-65</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Post / Release Parked Document</span><span class="fn-tcode">FBV0</span></div>
+          <span class="risk-badge risk-med">Medium</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Create/Maintain Asset Master</span><span class="fn-tcode">AS01, AS02</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Asset Retirement / Disposal</span><span class="fn-tcode">ABAVN, F-92</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+      </div>
+
+      <div class="module-cta">
+        <p><strong>This is a starting point.</strong> The full FI/CO SoD Ruleset covers all 30 risks with business rationale, suggested mitigating controls, and editable audit-tracking columns.</p>
+        <a class="cta-button" href="https://amreshfaldesai.gumroad.com/l/sap-fico-sod-ruleset" target="_blank" rel="noopener">View FI/CO Ruleset →</a>
+      </div>
+    </section>
+
+    <!-- ===================== MM ===================== -->
+    <section class="module" id="mm">
+      <div class="module-header">
+        <span class="module-code">MM</span>
+        <h2>Materials Management / Procurement</h2>
+      </div>
+      <p class="module-desc">Covers the full Procure-to-Pay cycle: Vendor &amp; Master Data, Purchasing, Goods Movement, Invoice &amp; Payment, and Inventory.</p>
+
+      <div class="subhead">Authorization Objects</div>
+      <table class="glossary-table" data-searchable>
+        <tbody>
+          <tr><td><span class="obj-code">M_BEST_BSA</span></td><td class="obj-desc">Purchasing document: authorization by document type — controls creation/change of POs by document category.</td><td class="obj-context">PO creation/change</td></tr>
+          <tr><td><span class="obj-code">M_BANF_BSA</span></td><td class="obj-desc">Purchase requisition: authorization by document type.</td><td class="obj-context">Requisition creation</td></tr>
+          <tr><td><span class="obj-code">M_BANF_FRG</span></td><td class="obj-desc">Purchase requisition: release/approval authorization.</td><td class="obj-context">Requisition release</td></tr>
+          <tr><td><span class="obj-code">M_EINK_FRG</span></td><td class="obj-desc">Purchase order: release/approval authorization — controls who can approve POs under the release strategy.</td><td class="obj-context">PO release/approval</td></tr>
+          <tr><td><span class="obj-code">M_MSEG_WMB</span></td><td class="obj-desc">Material document: goods movement authorization by plant/movement type.</td><td class="obj-context">Goods receipt, transfers, scrap</td></tr>
+          <tr><td><span class="obj-code">M_RECH_WRK</span></td><td class="obj-desc">Invoice verification: plant-level authorization for logistics invoice posting.</td><td class="obj-context">Invoice verification (MIRO)</td></tr>
+          <tr><td><span class="obj-code">M_MATE_WRK</span></td><td class="obj-desc">Material master: plant-level authorization for material master maintenance.</td><td class="obj-context">Material master maintenance</td></tr>
+          <tr><td><span class="obj-code">M_EINF_EKO</span></td><td class="obj-desc">Purchasing info record: purchasing organization-level authorization.</td><td class="obj-context">Info record / source list maintenance</td></tr>
+          <tr><td><span class="obj-code">M_ANFR_EKO</span></td><td class="obj-desc">RFQ (request for quotation): purchasing organization-level authorization.</td><td class="obj-context">RFQ creation and evaluation</td></tr>
+          <tr><td><span class="obj-code">M_VERT_BSA</span></td><td class="obj-desc">Outline agreement (contract/scheduling agreement): authorization by document type.</td><td class="obj-context">Contract/agreement maintenance</td></tr>
+          <tr><td><span class="obj-code">M_ISEG_WMB</span></td><td class="obj-desc">Physical inventory document: authorization by plant for count and adjustment postings.</td><td class="obj-context">Physical inventory count/adjustment</td></tr>
+          <tr><td><span class="obj-code">M_LFM1_BUK</span></td><td class="obj-desc">Vendor evaluation: company code-level authorization.</td><td class="obj-context">Vendor evaluation scoring</td></tr>
+          <tr><td><span class="obj-code">QM_ITB</span></td><td class="obj-desc">Quality management: inspection lot authorization.</td><td class="obj-context">Quality inspection and batch release</td></tr>
+        </tbody>
+      </table>
+
+      <div class="subhead">Common Conflict Patterns</div>
+      <div class="conflict-grid" data-searchable-container>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Create/Maintain Vendor Master</span><span class="fn-tcode">XK01, XK02, FK01, FK02</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Create Purchase Order</span><span class="fn-tcode">ME21N</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Create Purchase Order</span><span class="fn-tcode">ME21N</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Release / Approve Purchase Order</span><span class="fn-tcode">ME28, ME29N</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Post Goods Receipt</span><span class="fn-tcode">MIGO</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Post Vendor Invoice (LIV)</span><span class="fn-tcode">MIRO</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Create Purchase Order</span><span class="fn-tcode">ME21N</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Post Goods Receipt Against Own PO</span><span class="fn-tcode">MIGO</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Physical Inventory Count</span><span class="fn-tcode">MI04, MI05</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Post Inventory Adjustment</span><span class="fn-tcode">MI07, MI10</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Configure PO Release Strategy</span><span class="fn-tcode">OMGS</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Execute PO Release</span><span class="fn-tcode">ME29N, ME28</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+      </div>
+
+      <div class="module-cta">
+        <p><strong>This is a starting point.</strong> The full MM SoD Ruleset covers all 30 risks with business rationale, suggested mitigating controls, and editable audit-tracking columns.</p>
+        <a class="cta-button" href="https://amreshfaldesai.gumroad.com/l/sap-mm-sod-ruleset" target="_blank" rel="noopener">View MM Ruleset →</a>
+      </div>
+    </section>
+
+    <!-- ===================== SD ===================== -->
+    <section class="module" id="sd">
+      <div class="module-header">
+        <span class="module-code">SD</span>
+        <h2>Sales &amp; Distribution</h2>
+      </div>
+      <p class="module-desc">Covers the full Order-to-Cash cycle: Customer &amp; Master Data, Sales Orders, Delivery &amp; Shipping, Billing, Pricing &amp; Rebates, and Cash Application.</p>
+
+      <div class="subhead">Authorization Objects</div>
+      <table class="glossary-table" data-searchable>
+        <tbody>
+          <tr><td><span class="obj-code">V_KNA1_VKO</span></td><td class="obj-desc">Customer master: sales area authorization — controls which sales orgs/channels a user may maintain customer data for.</td><td class="obj-context">Customer master maintenance</td></tr>
+          <tr><td><span class="obj-code">V_VBAK_VKO</span></td><td class="obj-desc">Sales document: sales area authorization — controls creation/change of sales orders by sales org/channel.</td><td class="obj-context">Sales order creation/change</td></tr>
+          <tr><td><span class="obj-code">V_LIKP_VST</span></td><td class="obj-desc">Delivery document: shipping point authorization.</td><td class="obj-context">Delivery creation, goods issue</td></tr>
+          <tr><td><span class="obj-code">V_VBRK_FKA</span></td><td class="obj-desc">Billing document: billing type authorization — controls creation and release of billing documents.</td><td class="obj-context">Billing, credit memos, invoice reprint</td></tr>
+          <tr><td><span class="obj-code">V_KONH_VKO</span></td><td class="obj-desc">Pricing condition record: sales org authorization.</td><td class="obj-context">Pricing and rebate maintenance</td></tr>
+          <tr><td><span class="obj-code">F_KNA1_BUK</span></td><td class="obj-desc">Customer master: company code authorization — relevant to credit management and payment terms.</td><td class="obj-context">Credit limit, payment terms</td></tr>
+        </tbody>
+      </table>
+
+      <div class="subhead">Common Conflict Patterns</div>
+      <div class="conflict-grid" data-searchable-container>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Create Sales Order</span><span class="fn-tcode">VA01</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Release Order from Credit Block</span><span class="fn-tcode">VKM3, VKM4</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Create Outbound Delivery</span><span class="fn-tcode">VL01N</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Post Goods Issue (PGI)</span><span class="fn-tcode">VL02N</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Post Goods Issue (PGI)</span><span class="fn-tcode">VL02N</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Create Billing Document</span><span class="fn-tcode">VF01</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Manually Override Order Pricing</span><span class="fn-tcode">VA02</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Create Billing Document</span><span class="fn-tcode">VF01</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Remove Billing Block</span><span class="fn-tcode">VA02</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Create / Release Invoice</span><span class="fn-tcode">VF01</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+      </div>
+
+      <div class="module-cta">
+        <p><strong>This is a starting point.</strong> The full SD SoD Ruleset covers all 30 risks with business rationale, suggested mitigating controls, and editable audit-tracking columns.</p>
+        <a class="cta-button" href="https://amreshfaldesai.gumroad.com/l/sap-sd-sod-ruleset" target="_blank" rel="noopener">View SD Ruleset →</a>
+      </div>
+    </section>
+
+    <!-- ===================== HR ===================== -->
+    <section class="module" id="hr">
+      <div class="module-header">
+        <span class="module-code">HR</span>
+        <h2>HR / HCM</h2>
+      </div>
+      <p class="module-desc">Covers Employee Master Data, Payroll, Time &amp; Attendance, Compensation &amp; Benefits, Organizational Management, and Recruitment.</p>
+
+      <div class="subhead">Authorization Objects</div>
+      <table class="glossary-table" data-searchable>
+        <tbody>
+          <tr><td><span class="obj-code">P_ORGIN</span></td><td class="obj-desc">HR master data: the core structural authorization object controlling access to personnel data by infotype, subtype, and org key.</td><td class="obj-context">Employee master maintenance</td></tr>
+          <tr><td><span class="obj-code">P_PERNR</span></td><td class="obj-desc">HR master data: personnel-number-level authorization, often used to restrict/allow access to an employee's own record.</td><td class="obj-context">Self-service, payroll access control</td></tr>
+          <tr><td><span class="obj-code">PLOG</span></td><td class="obj-desc">Personnel planning (Organizational Management): authorization for org structure, positions, and jobs.</td><td class="obj-context">Org management, position assignment</td></tr>
+          <tr><td><span class="obj-code">CATSAPPROVE</span></td><td class="obj-desc">Cross-Application Time Sheet: authorization for approving time entries.</td><td class="obj-context">Time approval</td></tr>
+          <tr><td><span class="obj-code">S_USER_GRP</span></td><td class="obj-desc">User master maintenance: authorization by user group — relevant to who can provision SU01/PFCG access.</td><td class="obj-context">Access provisioning</td></tr>
+        </tbody>
+      </table>
+
+      <div class="subhead">Common Conflict Patterns</div>
+      <div class="conflict-grid" data-searchable-container>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Maintain Employee Bank Details</span><span class="fn-tcode">PA30 (Infotype 0009)</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Execute Payroll Payment Run</span><span class="fn-tcode">PC00_M99_CIPE</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Enter Employee Time</span><span class="fn-tcode">CAT2, CATS</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Approve Employee Time</span><span class="fn-tcode">CATS_APPR</span></div>
+          <span class="risk-badge risk-med">Medium</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Execute Payroll Run</span><span class="fn-tcode">PC00_M99_CALC</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Post Payroll Results to FI/CO</span><span class="fn-tcode">PC00_M99_CIPE</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+        <div class="conflict-row" data-searchable>
+          <div class="conflict-fn"><span class="fn-name">Maintain Payroll Control Record</span><span class="fn-tcode">PA03</span></div>
+          <span class="conflict-mark">⚡</span>
+          <div class="conflict-fn"><span class="fn-name">Execute Payroll Run</span><span class="fn-tcode">PC00_M99_CALC</span></div>
+          <span class="risk-badge risk-high">High</span>
+        </div>
+      </div>
+
+      <div class="module-cta">
+        <p><strong>This is a starting point.</strong> The full HR SoD Ruleset covers all 20 risks with business rationale, suggested mitigating controls, and editable audit-tracking columns.</p>
+        <a class="cta-button" href="https://amreshfaldesai.gumroad.com/l/sap-hr-sod-ruleset" target="_blank" rel="noopener">View HR Ruleset →</a>
+      </div>
+    </section>
+
+    <footer>
+      <p>This reference covers common, publicly documented SAP standard transaction codes and authorization objects for ECC and S/4HANA. It is not a certification and not a substitute for a formal SOX/internal audit opinion — every organization's role design and custom transactions differ.</p>
+      <p>Full risk-scored rulesets with editable audit tracking: <a href="https://amreshfaldesai.gumroad.com" target="_blank" rel="noopener">amreshfaldesai.gumroad.com</a></p>
+    </footer>
+  </main>
+</div>
+
+<script>
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', function() {
+    const q = this.value.trim().toLowerCase();
+
+    document.querySelectorAll('table.glossary-table tbody tr').forEach(function(row) {
+      row.classList.toggle('hidden', q && !row.textContent.toLowerCase().includes(q));
+    });
+
+    document.querySelectorAll('.conflict-row').forEach(function(row) {
+      row.classList.toggle('hidden', q && !row.textContent.toLowerCase().includes(q));
+    });
+  });
+</script>
+
+</body>
+</html>
